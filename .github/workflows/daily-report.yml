@@ -1,0 +1,43 @@
+name: KSM Daily Marketing Report
+
+on:
+  schedule:
+    - cron: '0 1 * * *'   # 01:00 UTC = 07:00 по времени Алматы (UTC+6). Поменяйте первые два числа под своё время.
+  workflow_dispatch:       # добавляет кнопку "Run workflow" на GitHub — запустить вручную для проверки
+
+permissions:
+  contents: write   # нужно, чтобы шаг ниже мог сохранить обновлённый файл обратно в репозиторий
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv python-pptx python-docx openpyxl
+
+      - name: Run the agent
+        env:
+          ROISTAT_API_KEY: ${{ secrets.ROISTAT_API_KEY }}
+          ROISTAT_PROJECT_ID: ${{ secrets.ROISTAT_PROJECT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python ksm_daily_agent.py
+
+      - name: Save the fresh snapshot back to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add latest_snapshot.json
+          if ! git diff --staged --quiet; then
+            git commit -m "Обновление данных: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
