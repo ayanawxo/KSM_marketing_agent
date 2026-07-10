@@ -1,0 +1,15 @@
+{
+  "updated_at": "2026-07-10T10:21:31.915338Z",
+  "totals": {
+    "yesterday": {
+      "leads": 12,
+      "cost": 26525.174000000003
+    },
+    "day_before": {
+      "leads": 14,
+      "cost": 31047.463
+    }
+  },
+  "analysis": "",
+  "alerts": []
+}
