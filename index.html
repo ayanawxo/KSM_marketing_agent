@@ -572,6 +572,15 @@ const pctChange = (o,n) => o===0?0:((n-o)/o)*100;
 const fmtMoney = n => Math.round(n).toLocaleString('ru-RU')+' ₸';
 const fmtNum = n => Math.round(n).toLocaleString('ru-RU');
 const fmtPct = n => (n>0?'+':'')+n.toFixed(1)+'%';
+// pctChange(0, n) всегда возвращает 0 (защита от деления на ноль) — это верно
+// для внутренних расчётов порогов/рекомендаций, но для ПОКАЗА пользователю
+// вводит в заблуждение: "0 лидов -> 3 лида" выглядело бы как "0.0%", то есть
+// "без изменений", хотя это заметное новое событие. Используется только там,
+// где дельта показывается человеку, а не в кодовой логике порогов.
+function fmtDelta(o, n){
+  if(o === 0) return n === 0 ? '—' : 'новое';
+  return fmtPct(pctChange(o, n));
+}
 function fmtDate(isoDate){
   if(!isoDate) return '';
   const d = new Date(isoDate+'T00:00:00');
@@ -735,25 +744,28 @@ function buildLine(svgEl, values, color){
 function renderDashboard(){
   const y = LIVE ? {leads:LIVE.totals.yesterday.leads, spend:LIVE.totals.yesterday.cost, visits:LIVE.totals.yesterday.visits||0} : yesterday;
   const db = LIVE ? {leads:LIVE.totals.day_before.leads, spend:LIVE.totals.day_before.cost, visits:LIVE.totals.day_before.visits||0} : dayBefore;
-  const leadsD = pctChange(db.leads, y.leads);
-  const spendD = pctChange(db.spend, y.spend);
-  const cplD = pctChange(cpl(db), cpl(y));
-  const visitsD = pctChange(db.visits, y.visits);
 
   const cards = [
-    {eyebrow:'Лиды · вчера', value: fmtNum(y.leads), delta: leadsD, deltaGoodDown:false, sub:'к позавчера'},
-    {eyebrow:'Расход · вчера', value: fmtMoney(y.spend), delta: spendD, deltaGoodDown:true, sub:'к позавчера'},
-    {eyebrow:'CPL · вчера', value: fmtMoney(cpl(y)), delta: cplD, deltaGoodDown:true, sub:'к позавчера'},
-    {eyebrow:'Визиты · вчера', value: fmtNum(y.visits), delta: visitsD, deltaGoodDown:false, sub:'к позавчера'}
+    {eyebrow:'Лиды · вчера', value: fmtNum(y.leads), prev: db.leads, curr: y.leads, deltaGoodDown:false, sub:'к позавчера'},
+    {eyebrow:'Расход · вчера', value: fmtMoney(y.spend), prev: db.spend, curr: y.spend, deltaGoodDown:true, sub:'к позавчера'},
+    {eyebrow:'CPL · вчера', value: fmtMoney(cpl(y)), prev: cpl(db), curr: cpl(y), deltaGoodDown:true, sub:'к позавчера'},
+    {eyebrow:'Визиты · вчера', value: fmtNum(y.visits), prev: db.visits, curr: y.visits, deltaGoodDown:false, sub:'к позавчера'}
   ];
   document.getElementById('kpiGrid').innerHTML = cards.map(c=>{
-    const isGood = c.deltaGoodDown ? c.delta<0 : c.delta>0;
-    const cls = c.delta===0 ? '' : (isGood ? (c.delta>0?'up-good':'down-good') : (c.delta>0?'up-bad':'down-bad'));
-    const arrow = c.delta>0?'▲':(c.delta<0?'▼':'—');
+    // prev===0 — тот же случай, что и в fmtDelta: "0 -> есть значение" это
+    // реальный рост, а не "0.0% без изменений", поэтому считаем знак
+    // отдельно и подписываем "новое", а не обманчивый процент.
+    const isFlat = c.prev === 0 && c.curr === 0;
+    const isNew = c.prev === 0 && c.curr !== 0;
+    const delta = isFlat ? 0 : (isNew ? (c.curr > 0 ? 1 : -1) : pctChange(c.prev, c.curr));
+    const isGood = c.deltaGoodDown ? delta<0 : delta>0;
+    const cls = delta===0 ? '' : (isGood ? (delta>0?'up-good':'down-good') : (delta>0?'up-bad':'down-bad'));
+    const arrow = delta>0?'▲':(delta<0?'▼':'—');
+    const deltaText = isFlat ? '—' : (isNew ? 'новое' : fmtPct(delta));
     return `<div class="kpi-card">
       <div class="eyebrow">${c.eyebrow}</div>
       <div class="kpi-value">${c.value}</div>
-      <div class="kpi-delta ${cls}">${arrow} ${fmtPct(c.delta)}</div>
+      <div class="kpi-delta ${cls}">${isFlat?'':arrow} ${deltaText}</div>
       <div class="kpi-sub">${c.sub}</div>
     </div>`;
   }).join('');
@@ -798,8 +810,8 @@ function renderDashboard(){
     const cd = pctChange(cpl(c.lastWeek), cpl(c.thisWeek));
     const act = campaignAction(ld, cd);
     return `<tr><td>${c.name}</td><td class="num">${fmtNum(c.thisWeek.leads)}</td>
-      <td class="num">${fmtPct(ld)}</td><td class="num">${fmtMoney(cpl(c.thisWeek))}</td>
-      <td class="num">${fmtPct(cd)}</td><td><span class="tag ${act.tone}">${act.label}</span></td></tr>`;
+      <td class="num">${fmtDelta(c.lastWeek.leads, c.thisWeek.leads)}</td><td class="num">${fmtMoney(cpl(c.thisWeek))}</td>
+      <td class="num">${fmtDelta(cpl(c.lastWeek), cpl(c.thisWeek))}</td><td><span class="tag ${act.tone}">${act.label}</span></td></tr>`;
   }).join('');
 
   updateNotifCount();
