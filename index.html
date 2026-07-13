@@ -949,8 +949,33 @@ function showToast(msg){
 document.getElementById('exportCsv').addEventListener('click', ()=>{
   const kind = document.querySelector('.tab.active').dataset.report;
   let rows = [['Показатель','Значение']];
-  if(kind==='daily'){ rows.push(['Лиды вчера',yesterday.leads],['Расход вчера',yesterday.spend],['CPL вчера',Math.round(cpl(yesterday))]); }
-  else if(kind==='weekly'){ rows.push(['Лиды неделя',thisWeek.leads],['Расход неделя',thisWeek.spend],['CPL неделя',Math.round(cpl(thisWeek))]); }
+  if(kind==='daily'){
+    if(LIVE){
+      const y = LIVE.totals.yesterday;
+      rows.push(['Дата',LIVE.period.yesterday],['Лиды',y.leads],['Расход, ₸',Math.round(y.cost)],
+        ['CPL, ₸',y.cpl!=null?Math.round(y.cpl):''],['Визиты',y.visits||0],
+        ['CTR, %',y.ctr!=null?y.ctr.toFixed(2):''],['CPC, ₸',y.cpc!=null?Math.round(y.cpc):'']);
+      rows.push(['']); rows.push(['Канал','Лиды','Расход, ₸','CPL, ₸']);
+      (LIVE.channels && LIVE.channels.yesterday || []).forEach(c=>{
+        rows.push([c.channel, c.leads, Math.round(c.cost), c.cpl!=null?Math.round(c.cpl):'']);
+      });
+    } else {
+      rows.push(['Лиды вчера',yesterday.leads],['Расход вчера',yesterday.spend],['CPL вчера',Math.round(cpl(yesterday))]);
+    }
+  }
+  else if(kind==='weekly'){
+    if(LIVE_WEEKLY){
+      const tw = LIVE_WEEKLY.totals.this_week;
+      rows.push(['Неделя',LIVE_WEEKLY.period.week_start+' — '+LIVE_WEEKLY.period.week_end],['Лиды',tw.leads],
+        ['Расход, ₸',Math.round(tw.cost)],['CPL, ₸',tw.cpl!=null?Math.round(tw.cpl):''],['Визиты',tw.visits||0]);
+      rows.push(['']); rows.push(['Канал','Лиды','Расход, ₸','CPL, ₸']);
+      (LIVE_WEEKLY.channels && LIVE_WEEKLY.channels.this_week || []).forEach(c=>{
+        rows.push([c.channel, c.leads, Math.round(c.cost), c.cpl!=null?Math.round(c.cpl):'']);
+      });
+    } else {
+      rows.push(['Лиды неделя',thisWeek.leads],['Расход неделя',thisWeek.spend],['CPL неделя',Math.round(cpl(thisWeek))]);
+    }
+  }
   else { rows.push(['Лиды месяц',DATA.monthly.thisMonth.leads],['Расход месяц',DATA.monthly.thisMonth.spend],['Выручка',DATA.monthly.thisMonth.revenue]); }
   const csv = rows.map(r=>r.join(';')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
