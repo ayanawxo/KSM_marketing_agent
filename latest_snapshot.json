@@ -1,15 +1,728 @@
 {
-  "updated_at": "2026-07-13T04:27:03.783184Z",
+  "updated_at": "2026-07-13T18:24:08.015639+00:00",
+  "period": {
+    "today": "2026-07-14",
+    "yesterday": "2026-07-13",
+    "day_before": "2026-07-12"
+  },
   "totals": {
     "yesterday": {
-      "leads": 2,
-      "cost": 19281.307999999997
+      "leads": 10,
+      "cost": 861.0060000000001,
+      "visits": 99,
+      "impressions": 527,
+      "clicks": 20,
+      "cpl": 86.10060000000001,
+      "ctr": 18.785578747628083,
+      "cpc": 8.697030303030305,
+      "cr": 10.1010101010101
     },
     "day_before": {
       "leads": 1,
-      "cost": 19779.513
+      "cost": 19281.307999999997,
+      "visits": 146,
+      "impressions": 4896,
+      "clicks": 124,
+      "cpl": 19281.307999999997,
+      "ctr": 2.9820261437908497,
+      "cpc": 132.0637534246575,
+      "cr": 0.684931506849315
     }
   },
-  "analysis": "# Отчёт по рекламным кампаниям (сравнение: вчера vs позавчера)\n\n## Что произошло\n\n**Общие показатели:**\n- Расход: 19 281 ₽ (вчера) vs 19 780 ₽ (позавчера) — практически без изменений (−2,5%)\n- Визиты: 146 vs 120 (+21,7%)\n- Лиды: 2 vs 1 — рост символический, база слишком мала для выводов\n\n**Критично:** оба платных канала — **Яндекс.Директ** и **Google Ads** — оба дня дали **0 лидов** при расходе почти в 19–20 тыс. ₽ ежедневно. Оба зафи",
-  "alerts": []
+  "channels": {
+    "yesterday": [
+      {
+        "key": "direct6",
+        "channel": "Яндекс.Директ",
+        "visits": 54,
+        "leads": 1,
+        "cost": 861.0060000000001,
+        "impressions": 490,
+        "clicks": 20,
+        "sub": [
+          {
+            "name": "Системные визиты",
+            "visits": 1,
+            "leads": 0,
+            "cost": 0
+          },
+          {
+            "name": "РСЯ",
+            "visits": 45,
+            "leads": 0,
+            "cost": 111.436
+          },
+          {
+            "name": "Поиск",
+            "visits": 8,
+            "leads": 1,
+            "cost": 749.57
+          }
+        ],
+        "cpl": 861.0060000000001,
+        "ctr": 11.020408163265307,
+        "cpc": 15.944555555555556
+      },
+      {
+        "key": "прямые визиты",
+        "channel": "Прямые визиты",
+        "visits": 1,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": "seo",
+        "channel": "SEO",
+        "visits": 8,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [
+          {
+            "name": "Google",
+            "visits": 5,
+            "leads": 0,
+            "cost": 0
+          },
+          {
+            "name": "Яндекс",
+            "visits": 2,
+            "leads": 0,
+            "cost": 0
+          },
+          {
+            "name": "Bing",
+            "visits": 1,
+            "leads": 0,
+            "cost": 0
+          }
+        ],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": ":utm:chatgpt.com",
+        "channel": "chatgpt.com",
+        "visits": 1,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": "google3",
+        "channel": "Google Ads 1",
+        "visits": 35,
+        "leads": 3,
+        "cost": 0,
+        "impressions": 37,
+        "clicks": 0,
+        "sub": [
+          {
+            "name": "Поисковые партнеры",
+            "visits": 0,
+            "leads": 0,
+            "cost": 0
+          },
+          {
+            "name": "Поиск",
+            "visits": 35,
+            "leads": 3,
+            "cost": 0
+          }
+        ],
+        "cpl": 0.0,
+        "ctr": 94.5945945945946,
+        "cpc": 0.0
+      },
+      {
+        "key": "boilers outgoing calls",
+        "channel": "boilers outgoing calls",
+        "visits": 0,
+        "leads": 1,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": 0.0,
+        "ctr": null,
+        "cpc": null
+      },
+      {
+        "key": "whatsapp",
+        "channel": "whatsapp",
+        "visits": 0,
+        "leads": 1,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": 0.0,
+        "ctr": null,
+        "cpc": null
+      },
+      {
+        "key": "google ads",
+        "channel": "google ads",
+        "visits": 0,
+        "leads": 2,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": 0.0,
+        "ctr": null,
+        "cpc": null
+      },
+      {
+        "key": "seo сайт",
+        "channel": "seo сайт",
+        "visits": 0,
+        "leads": 2,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": 0.0,
+        "ctr": null,
+        "cpc": null
+      }
+    ],
+    "day_before": [
+      {
+        "key": "direct6",
+        "channel": "Яндекс.Директ",
+        "visits": 111,
+        "leads": 0,
+        "cost": 10254.050000000001,
+        "impressions": 4413,
+        "clicks": 99,
+        "sub": [
+          {
+            "name": "РСЯ",
+            "visits": 107,
+            "leads": 0,
+            "cost": 753.11
+          },
+          {
+            "name": "Поиск",
+            "visits": 4,
+            "leads": 0,
+            "cost": 9500.94
+          }
+        ],
+        "cpl": null,
+        "ctr": 2.515295717199184,
+        "cpc": 92.37882882882884
+      },
+      {
+        "key": "google3",
+        "channel": "Google Ads 1",
+        "visits": 27,
+        "leads": 0,
+        "cost": 9027.258,
+        "impressions": 483,
+        "clicks": 25,
+        "sub": [
+          {
+            "name": "Поисковые партнеры",
+            "visits": 1,
+            "leads": 0,
+            "cost": 28.048
+          },
+          {
+            "name": "Поиск",
+            "visits": 26,
+            "leads": 0,
+            "cost": 8999.21
+          }
+        ],
+        "cpl": null,
+        "ctr": 5.590062111801243,
+        "cpc": 334.34288888888887
+      },
+      {
+        "key": "прямые визиты",
+        "channel": "Прямые визиты",
+        "visits": 2,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": "seo",
+        "channel": "SEO",
+        "visits": 1,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [
+          {
+            "name": "Google",
+            "visits": 1,
+            "leads": 0,
+            "cost": 0
+          }
+        ],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": ":utm:google",
+        "channel": "google",
+        "visits": 5,
+        "leads": 0,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [
+          {
+            "name": "cpc",
+            "visits": 5,
+            "leads": 0,
+            "cost": 0
+          }
+        ],
+        "cpl": null,
+        "ctr": null,
+        "cpc": 0.0
+      },
+      {
+        "key": "facebook10",
+        "channel": "Facebook 2",
+        "visits": 0,
+        "leads": 1,
+        "cost": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "sub": [
+          {
+            "name": "Ns/bk — 01.07.2026",
+            "visits": 0,
+            "leads": 1,
+            "cost": 0
+          }
+        ],
+        "cpl": 0.0,
+        "ctr": null,
+        "cpc": null
+      }
+    ]
+  },
+  "channel_baselines": [
+    {
+      "channel": "Яндекс.Директ",
+      "history_days_available": 89,
+      "baseline_confidence": "high",
+      "metrics": {
+        "visits": {
+          "mean_7d": 58.42857142857143,
+          "mean_28d": 53.142857142857146,
+          "std_28d": 15.761449185378877,
+          "trend_14v14_pct": 24.09638554216866,
+          "yesterday": 54,
+          "z_28d": 0.05438223649751594
+        },
+        "leads": {
+          "mean_7d": 0.2857142857142857,
+          "mean_28d": 0.4642857142857143,
+          "std_28d": 0.7444681351359537,
+          "trend_14v14_pct": -37.49999999999999,
+          "yesterday": 1,
+          "z_28d": 0.7195933048450144
+        },
+        "cost": {
+          "mean_7d": 4905.850142857143,
+          "mean_28d": 6379.148821428571,
+          "std_28d": 4245.12076756039,
+          "trend_14v14_pct": -21.714273114780866,
+          "yesterday": 861.0060000000001,
+          "z_28d": -1.299878878263284
+        },
+        "impressions": {
+          "mean_7d": 3589.1428571428573,
+          "mean_28d": 3589.25,
+          "std_28d": 1507.6299188535036,
+          "trend_14v14_pct": -6.337919605349369,
+          "yesterday": 490,
+          "z_28d": -2.0557100660066925
+        },
+        "clicks": {
+          "mean_7d": 50.142857142857146,
+          "mean_28d": 45.17857142857143,
+          "std_28d": 13.994849770748527,
+          "trend_14v14_pct": 23.4982332155477,
+          "yesterday": 20,
+          "z_28d": -1.7991312404938187
+        }
+      },
+      "cpl_pooled": {
+        "value_28d": 13739.705153846153,
+        "value_7d": 17170.4755,
+        "leads_n_28d": 13,
+        "low_volume_flag": true,
+        "yesterday_cpl": 861.0060000000001
+      }
+    },
+    {
+      "channel": "Прямые визиты",
+      "history_days_available": 80,
+      "baseline_confidence": "high",
+      "metrics": {
+        "visits": {
+          "mean_7d": 3.7142857142857144,
+          "mean_28d": 3.7857142857142856,
+          "std_28d": 2.5583145906970755,
+          "trend_14v14_pct": 20.83333333333335,
+          "yesterday": 1,
+          "z_28d": -1.0888865254664593
+        },
+        "leads": {
+          "mean_7d": 0.42857142857142855,
+          "mean_28d": 0.2857142857142857,
+          "std_28d": 0.5998236072282916,
+          "trend_14v14_pct": 0.0,
+          "yesterday": 0,
+          "z_28d": -0.47633051162246676
+        },
+        "cost": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "impressions": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "clicks": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        }
+      },
+      "cpl_pooled": {
+        "value_28d": 0.0,
+        "value_7d": 0.0,
+        "leads_n_28d": 8,
+        "low_volume_flag": true,
+        "yesterday_cpl": null
+      }
+    },
+    {
+      "channel": "SEO",
+      "history_days_available": 80,
+      "baseline_confidence": "high",
+      "metrics": {
+        "visits": {
+          "mean_7d": 5.857142857142857,
+          "mean_28d": 7.25,
+          "std_28d": 3.3843320912262294,
+          "trend_14v14_pct": -18.75,
+          "yesterday": 8,
+          "z_28d": 0.22160945787334244
+        },
+        "leads": {
+          "mean_7d": 0.42857142857142855,
+          "mean_28d": 0.39285714285714285,
+          "std_28d": 0.6288900106557949,
+          "trend_14v14_pct": -16.66666666666666,
+          "yesterday": 0,
+          "z_28d": -0.6246833885109396
+        },
+        "cost": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "impressions": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "clicks": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        }
+      },
+      "cpl_pooled": {
+        "value_28d": 0.0,
+        "value_7d": 0.0,
+        "leads_n_28d": 11,
+        "low_volume_flag": true,
+        "yesterday_cpl": null
+      }
+    },
+    {
+      "channel": "chatgpt.com",
+      "history_days_available": 22,
+      "baseline_confidence": "medium",
+      "metrics": {
+        "visits": {
+          "mean_7d": 1.0,
+          "mean_28d": 1.0909090909090908,
+          "std_28d": 0.29424494316824984,
+          "trend_14v14_pct": null,
+          "yesterday": 1,
+          "z_28d": -0.3089571903266621
+        },
+        "leads": {
+          "mean_7d": 0.14285714285714285,
+          "mean_28d": 0.22727272727272727,
+          "std_28d": 0.5284134548067253,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": -0.43010397484268353
+        },
+        "cost": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "impressions": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        },
+        "clicks": {
+          "mean_7d": 0.0,
+          "mean_28d": 0.0,
+          "std_28d": 0.0,
+          "trend_14v14_pct": null,
+          "yesterday": 0,
+          "z_28d": 0.0
+        }
+      },
+      "cpl_pooled": {
+        "value_28d": 0.0,
+        "value_7d": 0.0,
+        "leads_n_28d": 5,
+        "low_volume_flag": true,
+        "yesterday_cpl": null
+      }
+    },
+    {
+      "channel": "Google Ads 1",
+      "history_days_available": 89,
+      "baseline_confidence": "high",
+      "metrics": {
+        "visits": {
+          "mean_7d": 46.857142857142854,
+          "mean_28d": 53.17857142857143,
+          "std_28d": 18.69651100632211,
+          "trend_14v14_pct": -13.174404015056462,
+          "yesterday": 35,
+          "z_28d": -0.9722975277272032
+        },
+        "leads": {
+          "mean_7d": 1.2857142857142858,
+          "mean_28d": 2.25,
+          "std_28d": 2.11913679141785,
+          "trend_14v14_pct": -20.0,
+          "yesterday": 3,
+          "z_28d": 0.35391769093782655
+        },
+        "cost": {
+          "mean_7d": 17149.848285714284,
+          "mean_28d": 21116.09503571428,
+          "std_28d": 8752.579282396884,
+          "trend_14v14_pct": -18.017927724120973,
+          "yesterday": 0,
+          "z_28d": -2.412556842322217
+        },
+        "impressions": {
+          "mean_7d": 628.0,
+          "mean_28d": 739.0714285714286,
+          "std_28d": 200.8284561088612,
+          "trend_14v14_pct": -13.332130615190326,
+          "yesterday": 37,
+          "z_28d": -3.495876242711657
+        },
+        "clicks": {
+          "mean_7d": 41.57142857142857,
+          "mean_28d": 49.035714285714285,
+          "std_28d": 17.48540585715465,
+          "trend_14v14_pct": -15.208613728129203,
+          "yesterday": 0,
+          "z_28d": -2.804379531496544
+        }
+      },
+      "cpl_pooled": {
+        "value_28d": 9384.931126984124,
+        "value_7d": 13338.770888888888,
+        "leads_n_28d": 63,
+        "low_volume_flag": true,
+        "yesterday_cpl": 0.0
+      }
+    },
+    {
+      "channel": "boilers outgoing calls",
+      "baseline_confidence": "medium",
+      "yesterday_leads": 1,
+      "yesterday_cost": 0,
+      "cpl_28d": 0.0
+    },
+    {
+      "channel": "whatsapp",
+      "baseline_confidence": "low",
+      "yesterday_leads": 1,
+      "yesterday_cost": 0,
+      "cpl_28d": 0.0
+    },
+    {
+      "channel": "google ads",
+      "baseline_confidence": "low",
+      "yesterday_leads": 2,
+      "yesterday_cost": 0,
+      "cpl_28d": 0.0
+    },
+    {
+      "channel": "seo сайт",
+      "baseline_confidence": "medium",
+      "yesterday_leads": 2,
+      "yesterday_cost": 0,
+      "cpl_28d": 0.0
+    }
+  ],
+  "best_channel": {
+    "key": "google3",
+    "channel": "Google Ads 1",
+    "visits": 35,
+    "leads": 3,
+    "cost": 0,
+    "impressions": 37,
+    "clicks": 0,
+    "sub": [
+      {
+        "name": "Поисковые партнеры",
+        "visits": 0,
+        "leads": 0,
+        "cost": 0
+      },
+      {
+        "name": "Поиск",
+        "visits": 35,
+        "leads": 3,
+        "cost": 0
+      }
+    ],
+    "cpl": 0.0,
+    "ctr": 94.5945945945946,
+    "cpc": 0.0
+  },
+  "worst_channel": {
+    "key": "direct6",
+    "channel": "Яндекс.Директ",
+    "visits": 54,
+    "leads": 1,
+    "cost": 861.0060000000001,
+    "impressions": 490,
+    "clicks": 20,
+    "sub": [
+      {
+        "name": "Системные визиты",
+        "visits": 1,
+        "leads": 0,
+        "cost": 0
+      },
+      {
+        "name": "РСЯ",
+        "visits": 45,
+        "leads": 0,
+        "cost": 111.436
+      },
+      {
+        "name": "Поиск",
+        "visits": 8,
+        "leads": 1,
+        "cost": 749.57
+      }
+    ],
+    "cpl": 861.0060000000001,
+    "ctr": 11.020408163265307,
+    "cpc": 15.944555555555556
+  },
+  "no_leads_spend_channels": [],
+  "analysis": {
+    "what_happened": "Резкое улучшение день к дню: лидов 10 против 1 позавчера (х10), расход упал с 19 281₸ до 861₸ (-95,5%), визитов 99 против 146 (-32%), показов 527 против 4896 (-89%), кликов 20 против 124 (-84%). CPL рухнул с 19 281₸ до 86₸ (в 224 раза ниже) за счёт одновременного взлёта лидов и обвала расхода. CTR вырос до 18,8% против 2,98% (из-за резкого падения показов), CPC снизился с 132₸ до 8,7₸. CR вырос с 0,68% до 10,1%.\n\nПо каналам: Google Ads 1 вчера показал расход 0₸ при 3 лидах и 35 визитах (аномалия — вероятно, сбой передачи расходов в Roistat, т.к. 28-дневная средняя стоимость канала ~21 116₸, z_28d=-2,41 по расходу, z_28d=-3,5 по показам). Яндекс.Директ дал 1 лид за 861₸ (обычно CPL канала 13 739₸ по 28д — снижение сильное, но объём мал, low_volume_flag=true). Остальные лиды (whatsapp, google ads, seo сайт, boilers outgoing calls — итого 6 лидов) пришли с cost=0 и без привязки к visits/impressions — похоже на прямые обращения или неатрибутированный трафик.",
+    "why": "Главная вероятная причина — техническая аномалия в трекинге Google Ads: расход показан как 0₸ при наличии кликов на 37 показов и 3 лидах, при этом показы/клики канала упали в разы против нормы (z_28d от -2,4 до -3,5) — похоже, что часть кампаний Google Ads была отключена/остановлена или произошёл сбой синхронизации расходов с Roistat, из-за чего вчерашний расход не засчитан. Это единственная причина, объясняющая одновременно обвал расхода (-95%) и рост лидов — по факту компания вчера почти не тратила на рекламу, но получила много лидов, часть из которых (whatsapp, seo сайт, google ads, boilers outgoing calls) не привязана к затратам вообще — это могут быть повторные обращения текущих клиентов, органика или лиды с задержкой атрибуции, а не результат вчерашних показов. Из-за низкого объёма данных по большинству каналов (low_volume_flag=true везде, где считался CPL) делать выводы о системном улучшении эффективности рано — выборка в 1-3 лида в день не репрезентативна.",
+    "actions": [
+      "Срочно проверить в Google Ads Кабинете реальный расход за вчера — сверить с 0₸ в Roistat, вероятен сбой интеграции/остановка кампаний",
+      "Проверить статус кампаний Яндекс.Директ и Google Ads — не отключены ли они на паузу агентством без уведомления",
+      "Проверить источники 4 лидов с cost=0 (whatsapp, google ads, seo сайт, boilers outgoing calls) — уточнить, это новые обращения или дубли/повторные из CRM",
+      "Не делать выводов о резком улучшении эффективности рекламы на основе 1 дня — маленькая выборка (1-3 лида на канал)",
+      "Сравнить сегодняшние вечерние данные — если расход Google Ads так и останется 0, эскалировать агентству как критичную проблему"
+    ],
+    "agency_questions": [
+      "Почему по Google Ads 1 вчера расход показан 0₸ при 37 показах и 3 лидах — кампании были отключены или это ошибка передачи данных в Roistat?",
+      "Кампании Яндекс.Директ и Google Ads работали вчера в штатном режиме или были внесены изменения (паузы, снижение ставок, бюджетов)?",
+      "Откуда пришли лиды по каналам whatsapp, google ads, seo сайт, boilers outgoing calls без затрат и визитов — это новый функционал атрибуции или сбой?",
+      "Когда ожидается корректировка расхода Google Ads за вчерашний день в Roistat, если это временная задержка синхронизации?"
+    ]
+  },
+  "alerts": [
+    "Трафик резко снизился на 32.2% (99 визитов против 146).",
+    "Лиды с начала месяца отстают от плана: 72 при ожидаемых ~168 на 13-й день месяца (план на весь месяц — 400)."
+  ],
+  "month_to_date": {
+    "totals": {
+      "leads": 72,
+      "cost": 268735.86699999997,
+      "visits": 1573,
+      "impressions": 53828,
+      "clicks": 1175,
+      "cpl": 3732.4425972222216,
+      "ctr": 2.92227093705878,
+      "cpc": 170.84289065479973,
+      "cr": 4.577240940877305
+    },
+    "days_elapsed": 13,
+    "days_in_month": 31,
+    "leads_target": 400,
+    "budget_target": 8000000
+  }
 }

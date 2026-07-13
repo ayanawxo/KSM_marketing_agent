@@ -336,17 +336,17 @@ a{color:var(--steel);}
     <section id="panel-dashboard" class="panel active">
       <div class="card" id="liveAnalysisCard" style="display:none; margin-bottom:16px; border-color:var(--steel);">
         <div class="eyebrow" style="color:var(--steel);">Живой анализ Claude · обновлено <span id="liveUpdatedAt"></span></div>
-        <p id="liveAnalysisText" style="color:var(--ink-dim); font-size:13.5px; line-height:1.7; white-space:pre-wrap; margin:0;"></p>
+        <div id="liveAnalysisText" style="color:var(--ink-dim); font-size:13.5px; line-height:1.7; margin:0;"></div>
       </div>
       <div class="kpi-grid" id="kpiGrid"></div>
       <div class="chart-row">
         <div class="card chart-card blueprint">
-          <div class="eyebrow">Лиды · 14 дней <span style="color:var(--muted); text-transform:none; letter-spacing:0; font-family:var(--font-body); font-size:11px;">(накопится по мере ежедневных запусков)</span></div>
+          <div class="eyebrow">Лиды · 14 дней <span id="leadsChartNote" style="color:var(--muted); text-transform:none; letter-spacing:0; font-family:var(--font-body); font-size:11px;">(накопится по мере ежедневных запусков)</span></div>
           <svg id="leadsChart" viewBox="0 0 560 120" preserveAspectRatio="none"></svg>
           <div class="chart-foot" id="leadsChartFoot"></div>
         </div>
         <div class="card chart-card blueprint">
-          <div class="eyebrow">Расход · 14 дней <span style="color:var(--muted); text-transform:none; letter-spacing:0; font-family:var(--font-body); font-size:11px;">(накопится по мере ежедневных запусков)</span></div>
+          <div class="eyebrow">Расход · 14 дней <span id="spendChartNote" style="color:var(--muted); text-transform:none; letter-spacing:0; font-family:var(--font-body); font-size:11px;">(накопится по мере ежедневных запусков)</span></div>
           <svg id="spendChart" viewBox="0 0 560 120" preserveAspectRatio="none"></svg>
           <div class="chart-foot" id="spendChartFoot"></div>
         </div>
@@ -396,9 +396,9 @@ a{color:var(--steel);}
 
     <section id="panel-agency" class="panel">
       <div class="card" style="margin-bottom:16px;">
-        <div class="eyebrow">Проблемные кампании</div>
+        <div class="eyebrow" id="agencyTableEyebrow">Каналы</div>
         <table class="data-table">
-          <thead><tr><th>Кампания</th><th>Канал</th><th class="num">CPL</th><th class="num">Δ CPL</th><th>Рекомендация</th></tr></thead>
+          <thead><tr><th>Канал</th><th class="num">Лиды</th><th class="num">Расход</th><th class="num">CPL</th><th class="num">Δ CPL</th><th>Рекомендация</th></tr></thead>
           <tbody id="agencyCampBody"></tbody>
         </table>
       </div>
@@ -419,9 +419,11 @@ a{color:var(--steel);}
             <option>Отчёт</option><option>Обучающий материал</option><option>Медиаплан</option><option>Другое</option>
           </select>
         </div>
-        <div class="field full"><label>Заметка / ссылка на файл (Google Drive и т.п.)</label><textarea id="kbNote" rows="2" placeholder="Краткое описание и/или ссылка"></textarea></div>
+        <div class="field full"><label>Заметка</label><textarea id="kbNote" rows="2" placeholder="Краткое описание"></textarea></div>
+        <div class="field full"><label>Файл (необязательно): PDF, PNG, JPG, PPTX, DOCX, XLSX</label><input type="file" id="kbFile" accept=".pdf,.png,.jpg,.jpeg,.pptx,.docx,.xlsx"></div>
         <div class="field full"><button type="submit" class="btn primary">Добавить в базу знаний</button></div>
       </form>
+      <div class="saved-msg" id="kbSaved" hidden></div>
       <div class="kb-list" id="kbList"></div>
     </section>
 
@@ -432,6 +434,14 @@ a{color:var(--steel);}
         <div class="field"><label>Порог падения лидов для уведомления, %</label><input type="number" id="setLeads" min="1" max="100" required></div>
         <div class="field"><label>Цель по лидам на месяц</label><input type="number" id="setLeadsTarget" min="1" required></div>
         <div class="field"><label>Бюджет на месяц, ₸</label><input type="number" id="setBudgetTarget" min="1" required></div>
+        <details class="field full" style="margin-top:4px;">
+          <summary style="cursor:pointer; color:var(--muted); font-size:12.5px;">Дополнительно (для настройки сайта разработчиком)</summary>
+          <div class="field full" style="margin-top:10px;">
+            <label>Личный токен доступа GitHub</label>
+            <input type="password" id="setGithubToken" placeholder="ghp_..." autocomplete="off">
+            <p class="muted" style="font-size:12px; margin:6px 0 0;">Нужен, чтобы настройки и база знаний сохранялись в репозиторий сайта. Хранится только в этом браузере, никуда, кроме GitHub, не отправляется.</p>
+          </div>
+        </details>
         <div class="field full"><button type="submit" class="btn primary">Сохранить настройки</button></div>
       </form>
       <div class="saved-msg" id="settingsSaved" hidden>Сохранено. Уведомления пересчитаны.</div>
@@ -495,6 +505,62 @@ const DATA = {
   ]
 };
 
+/* ============ ЗАПИСЬ В GITHUB (config.json и база знаний) ============
+   window.storage, на который раньше опирались Настройки/База знаний/чек-лист
+   агентства, нигде не определён в обычном браузере (подтверждено на реальном
+   сервере) — все сохранения тихо проваливались. Ниже — настоящая запись через
+   GitHub Contents API личным токеном пользователя (хранится только в
+   localStorage браузера, скрыт по умолчанию во вкладке «Настройки»). */
+const GH_OWNER = 'ayanawxo';
+const GH_REPO = 'KSM_marketing_agent';
+const GH_BRANCH = 'main';
+const GH_TOKEN_KEY = 'ksm_github_pat';
+
+function getGithubToken(){ return localStorage.getItem(GH_TOKEN_KEY) || ''; }
+function setGithubToken(t){ if(t) localStorage.setItem(GH_TOKEN_KEY, t); else localStorage.removeItem(GH_TOKEN_KEY); }
+
+async function githubGetFileMeta(path){
+  const token = getGithubToken();
+  if(!token) return null;
+  const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+  });
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error(`GitHub API ${res.status}: не удалось прочитать ${path}`);
+  return res.json();
+}
+async function githubReadTextFile(path){
+  const meta = await githubGetFileMeta(path);
+  if(!meta || !meta.content) return '';
+  return decodeURIComponent(escape(atob(meta.content.replace(/\n/g,''))));
+}
+async function githubWriteFile(path, content, message, isBase64){
+  const token = getGithubToken();
+  if(!token) throw new Error('Нет токена GitHub — откройте «Настройки → Дополнительно» и вставьте личный токен доступа.');
+  const meta = await githubGetFileMeta(path);
+  const body = {
+    message,
+    content: isBase64 ? content : btoa(unescape(encodeURIComponent(content))),
+    branch: GH_BRANCH,
+  };
+  if(meta && meta.sha) body.sha = meta.sha;
+  const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if(!res.ok){ const err = await res.json().catch(()=>({})); throw new Error(err.message || `GitHub API ${res.status}`); }
+  return res.json();
+}
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 /* ============ HELPERS ============ */
 const sum = (a,b)=>({leads:a.leads+b.leads, spend:a.spend+b.spend});
 const lastWeek = DATA.daily.slice(0,7).reduce(sum,{leads:0,spend:0});
@@ -506,6 +572,11 @@ const pctChange = (o,n) => o===0?0:((n-o)/o)*100;
 const fmtMoney = n => Math.round(n).toLocaleString('ru-RU')+' ₸';
 const fmtNum = n => Math.round(n).toLocaleString('ru-RU');
 const fmtPct = n => (n>0?'+':'')+n.toFixed(1)+'%';
+function fmtDate(isoDate){
+  if(!isoDate) return '';
+  const d = new Date(isoDate+'T00:00:00');
+  return d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
+}
 function dateLabel(daysAgo){
   const d = new Date(); d.setDate(d.getDate()-daysAgo);
   if(daysAgo===1) return 'Вчера';
@@ -519,17 +590,15 @@ function monthLabel(offset){
 
 let SETTINGS = { cplAlertPct:15, leadsDropAlertPct:15, monthlyLeadsTarget:400, monthlyBudgetTarget:8000000 };
 let LIVE = null; // заполняется, если рядом найден latest_snapshot.json от ksm_daily_agent.py
+let LIVE_WEEKLY = null; // заполняется, если рядом найден latest_weekly_snapshot.json
+let LIVE_HISTORY = null; // дневной агрегат из data/channel_history.json (накопительная статистика)
 let currentTheme = 'dark';
 
 function cssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 async function loadTheme(){
-  try{
-    const res = await window.storage.get('ui:theme', false);
-    if(res && res.value) return res.value;
-  }catch(e){}
-  return 'dark';
+  return localStorage.getItem('ksm_theme') || 'dark';
 }
 function applyTheme(theme){
   currentTheme = theme;
@@ -543,7 +612,7 @@ document.getElementById('themeToggle').addEventListener('click', async ()=>{
   const next = currentTheme === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   renderDashboard(); // перерисовать графики в новых цветах темы
-  try{ await window.storage.set('ui:theme', next, false); }catch(e){}
+  localStorage.setItem('ksm_theme', next);
 });
 
 async function tryLoadLive(){
@@ -555,6 +624,56 @@ async function tryLoadLive(){
     return data;
   }catch(e){ return null; }
 }
+async function tryLoadLiveWeekly(){
+  try{
+    const res = await fetch('latest_weekly_snapshot.json', {cache:'no-store'});
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data || !data.totals || !data.totals.this_week) return null;
+    return data;
+  }catch(e){ return null; }
+}
+// data/channel_history.json — накопительная история по каналам (90-дневное
+// окно), которую пишет ksm_daily_agent.py каждый запуск. Здесь схлопываем её
+// в дневной агрегат (сумма по всем каналам за каждую дату) для графиков —
+// сами по-канальные ряды используются в reportDaily/reportWeekly через
+// channel_baselines, здесь нужен только общий тренд.
+async function tryLoadChannelHistory(){
+  try{
+    const res = await fetch('data/channel_history.json', {cache:'no-store'});
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data || !data.channels) return null;
+    const byDate = {};
+    Object.values(data.channels).forEach(ch=>{
+      (ch.history||[]).forEach(r=>{
+        const d = byDate[r.date] || (byDate[r.date] = {date:r.date, leads:0, cost:0, visits:0});
+        d.leads += r.leads; d.cost += r.cost; d.visits += r.visits;
+      });
+    });
+    return Object.values(byDate).sort((a,b)=>a.date.localeCompare(b.date));
+  }catch(e){ return null; }
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Claude иногда может вернуть что-то не той формы (например строку вместо
+// массива) — весь сайт не должен падать целиком из-за одного некорректного
+// поля в JSON. Используется везде вместо прямого предположения "это массив".
+function asList(x){ return Array.isArray(x) ? x : []; }
+// analysis теперь структурированный объект {what_happened, why, actions[], agency_questions[]}
+// (раньше был свободный текст Claude, который на практике обрывался до половины и
+// показывался как есть, включая markdown-звёздочки) — рендерим по полям.
+function renderAnalysisHTML(analysis){
+  if(!analysis) return '';
+  const list = arr => (Array.isArray(arr) && arr.length) ? `<ul style="margin:6px 0 0; padding-left:18px;">${arr.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
+  return `
+    <p style="margin:0 0 10px;"><strong>Что произошло:</strong> ${escapeHtml(analysis.what_happened)}</p>
+    <p style="margin:0 0 10px;"><strong>Почему:</strong> ${escapeHtml(analysis.why)}</p>
+    <p style="margin:0 0 4px;"><strong>Что делать:</strong></p>${list(analysis.actions)}
+    <p style="margin:10px 0 4px;"><strong>Вопросы агентству:</strong></p>${list(analysis.agency_questions)}
+  `;
+}
 function applyLiveStatus(){
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -565,7 +684,7 @@ function applyLiveStatus(){
     if(LIVE.analysis){
       document.getElementById('liveAnalysisCard').style.display = 'block';
       document.getElementById('liveUpdatedAt').textContent = text.textContent.replace('Обновлено ','');
-      document.getElementById('liveAnalysisText').textContent = LIVE.analysis;
+      document.getElementById('liveAnalysisText').innerHTML = renderAnalysisHTML(LIVE.analysis);
     }
   } else {
     dot.style.background = 'var(--amber)';
@@ -639,19 +758,36 @@ function renderDashboard(){
     </div>`;
   }).join('');
 
-  buildLine(document.getElementById('leadsChart'), DATA.daily.map(d=>d.leads), cssVar('--steel'));
-  buildLine(document.getElementById('spendChart'), DATA.daily.map(d=>d.spend), cssVar('--amber'));
-  document.getElementById('leadsChartFoot').innerHTML = `<span>${dateLabel(14)}</span><span>${dateLabel(1)}</span>`;
-  document.getElementById('spendChartFoot').innerHTML = `<span>${dateLabel(14)}</span><span>${dateLabel(1)}</span>`;
+  // Реальная накопленная история (data/channel_history.json, дневной агрегат по
+  // всем каналам) — как только накопится хотя бы 2 дня, показываем её вместо
+  // декоративного примера.
+  const hist14 = (LIVE_HISTORY && LIVE_HISTORY.length>=2) ? LIVE_HISTORY.slice(-14) : null;
+  if(hist14){
+    buildLine(document.getElementById('leadsChart'), hist14.map(d=>d.leads), cssVar('--steel'));
+    buildLine(document.getElementById('spendChart'), hist14.map(d=>d.cost), cssVar('--amber'));
+    document.getElementById('leadsChartFoot').innerHTML = `<span>${fmtDate(hist14[0].date)}</span><span>${fmtDate(hist14[hist14.length-1].date)}</span>`;
+    document.getElementById('spendChartFoot').innerHTML = `<span>${fmtDate(hist14[0].date)}</span><span>${fmtDate(hist14[hist14.length-1].date)}</span>`;
+    document.getElementById('leadsChartNote').textContent = `(реальные данные, ${hist14.length} дн.)`;
+    document.getElementById('spendChartNote').textContent = `(реальные данные, ${hist14.length} дн.)`;
+  } else {
+    buildLine(document.getElementById('leadsChart'), DATA.daily.map(d=>d.leads), cssVar('--steel'));
+    buildLine(document.getElementById('spendChart'), DATA.daily.map(d=>d.spend), cssVar('--amber'));
+    document.getElementById('leadsChartFoot').innerHTML = `<span>${dateLabel(14)}</span><span>${dateLabel(1)}</span>`;
+    document.getElementById('spendChartFoot').innerHTML = `<span>${dateLabel(14)}</span><span>${dateLabel(1)}</span>`;
+    document.getElementById('leadsChartNote').textContent = '(демо — накопится по мере ежедневных запусков)';
+    document.getElementById('spendChartNote').textContent = '(демо — накопится по мере ежедневных запусков)';
+  }
 
-  document.getElementById('channelsEyebrow').textContent = LIVE ? 'Каналы · вчера к позавчера' : 'Каналы · неделя к неделе';
+  document.getElementById('channelsEyebrow').textContent = LIVE
+    ? `Каналы · ${fmtDate(LIVE.period.yesterday)} к ${fmtDate(LIVE.period.day_before)}`
+    : 'Каналы · неделя к неделе (демо)';
   let rows;
   if(LIVE && LIVE.channels){
     const byName = {};
-    (LIVE.channels.day_before||[]).forEach(c=>{ byName[c.name] = {name:c.name, lastWeek:{leads:c.leads,spend:c.cost}, thisWeek:{leads:0,spend:0}}; });
+    (LIVE.channels.day_before||[]).forEach(c=>{ byName[c.channel] = {name:c.channel, lastWeek:{leads:c.leads,spend:c.cost}, thisWeek:{leads:0,spend:0}}; });
     (LIVE.channels.yesterday||[]).forEach(c=>{
-      if(!byName[c.name]) byName[c.name] = {name:c.name, lastWeek:{leads:0,spend:0}, thisWeek:{leads:0,spend:0}};
-      byName[c.name].thisWeek = {leads:c.leads, spend:c.cost};
+      if(!byName[c.channel]) byName[c.channel] = {name:c.channel, lastWeek:{leads:0,spend:0}, thisWeek:{leads:0,spend:0}};
+      byName[c.channel].thisWeek = {leads:c.leads, spend:c.cost};
     });
     rows = Object.values(byName).sort((a,b)=> pctChange(cpl(b.lastWeek),cpl(b.thisWeek)) - pctChange(cpl(a.lastWeek),cpl(a.thisWeek)));
   } else {
@@ -671,17 +807,27 @@ function renderDashboard(){
 
 /* ============ NOTIFICATIONS ============ */
 function computeNotifications(){
+  // Пороги и сами уведомления теперь считает Python-скрипт (check_thresholds) —
+  // 8 типов сигналов вместо прежних 2, на реальных данных Roistat. Здесь просто
+  // показываем то, что он уже посчитал и сохранил в снимок.
+  if(LIVE && Array.isArray(LIVE.alerts)){
+    const list = LIVE.alerts.map(text=>({level:'warning', title:'Отклонение · ' + (LIVE.period?fmtDate(LIVE.period.yesterday):''), text}));
+    if(LIVE_WEEKLY && Array.isArray(LIVE_WEEKLY.alerts)){
+      LIVE_WEEKLY.alerts.forEach(text=> list.push({level:'warning', title:'Отклонение за неделю', text}));
+    }
+    return list;
+  }
   const list = [];
   const leadsD = pctChange(dayBefore.leads, yesterday.leads);
   if(leadsD <= -SETTINGS.leadsDropAlertPct){
-    list.push({level:'critical', title:'Резкое падение лидов за сутки',
+    list.push({level:'critical', title:'Резкое падение лидов за сутки (демо)',
       text:`Количество лидов вчера снизилось на ${Math.abs(leadsD).toFixed(1)}% по сравнению с позавчера (${yesterday.leads} против ${dayBefore.leads}), расход изменился на ${fmtPct(pctChange(dayBefore.spend,yesterday.spend))}. Проверьте, что произошло за последние 24 часа.`});
   }
   DATA.campaigns.forEach(c=>{
     const ld = pctChange(c.lastWeek.leads, c.thisWeek.leads);
     const cd = pctChange(cpl(c.lastWeek), cpl(c.thisWeek));
     if(cd >= SETTINGS.cplAlertPct && ld < 0){
-      list.push({level: cd>=40?'critical':'warning', title:`${c.name} (${c.channel}): рост CPL`,
+      list.push({level: cd>=40?'critical':'warning', title:`${c.name} (${c.channel}): рост CPL (демо)`,
         text:`За неделю лиды снизились на ${Math.abs(ld).toFixed(1)}%, CPL вырос с ${fmtMoney(cpl(c.lastWeek))} до ${fmtMoney(cpl(c.thisWeek))} (${fmtPct(cd)}). Рекомендуется проверить ключевые слова и посадочную страницу, запросить у агентства список изменений.`});
     }
   });
@@ -705,55 +851,70 @@ function renderNotifications(){
 }
 
 /* ============ REPORTS ============ */
+function demoBadge(){
+  return '<span class="tag amber" style="margin-left:8px;">иллюстративные данные</span>';
+}
+function channelListHTML(channels){
+  if(!channels || !channels.length) return '<p class="muted">Нет данных по каналам за этот период.</p>';
+  const sorted = [...channels].sort((a,b)=>b.cost-a.cost);
+  return `<ul style="margin:6px 0 0; padding-left:18px;">${sorted.map(c=>
+    `<li>${escapeHtml(c.channel)} — лиды ${fmtNum(c.leads)}, расход ${fmtMoney(c.cost)}${c.cpl!=null?`, CPL ${fmtMoney(c.cpl)}`:''}</li>`
+  ).join('')}</ul>`;
+}
 function reportDaily(){
-  const leadsD = pctChange(dayBefore.leads, yesterday.leads);
-  const spendD = pctChange(dayBefore.spend, yesterday.spend);
-  const cplD = pctChange(cpl(dayBefore), cpl(yesterday));
-  const sorted = [...DATA.channels].sort((a,b)=>cpl(a.thisWeek)-cpl(b.thisWeek));
-  const best = sorted[0], worst = sorted[sorted.length-1];
+  if(!LIVE){
+    return `<p>${demoBadge()}</p><h3>Что произошло</h3>
+    <p>Вчера: ${yesterday.leads} лидов, расход ${fmtMoney(yesterday.spend)}, CPL ${fmtMoney(cpl(yesterday))}.</p>
+    <h3>Что нужно запросить у подрядчика</h3>
+    <ul><li>Список изменений в кампаниях за последние 48 часов</li><li>Причину роста CPC</li></ul>`;
+  }
+  const y = LIVE.totals.yesterday, db = LIVE.totals.day_before;
+  const leadsD = pctChange(db.leads, y.leads), spendD = pctChange(db.cost, y.cost), cplD = pctChange(db.cpl||0, y.cpl||0);
+  const best = LIVE.best_channel, worst = LIVE.worst_channel;
   return `
     <h3>Что произошло</h3>
-    <p>Вчера: ${yesterday.leads} лидов, расход ${fmtMoney(yesterday.spend)}, CPL ${fmtMoney(cpl(yesterday))} (${fmtPct(cplD)} к позавчера). Лиды изменились на ${fmtPct(leadsD)}, расход — на ${fmtPct(spendD)}.</p>
-    <h3>Лучший / худший канал за неделю</h3>
-    <p>Лучший — <strong>${best.name}</strong>, CPL ${fmtMoney(cpl(best.thisWeek))}. Худший — <strong>${worst.name}</strong>, CPL ${fmtMoney(cpl(worst.thisWeek))} (${fmtPct(pctChange(cpl(worst.lastWeek),cpl(worst.thisWeek)))} за неделю).</p>
-    <h3>Что нужно запросить у подрядчика</h3>
-    <ul><li>Список изменений в кампаниях направления БМК за последние 48 часов</li><li>Причину роста CPC по кампании «БМК — Поиск»</li></ul>
+    <p>Вчера (${fmtDate(LIVE.period.yesterday)}): ${y.leads} лидов, расход ${fmtMoney(y.cost)}${y.cpl!=null?`, CPL ${fmtMoney(y.cpl)} (${fmtPct(cplD)} к позавчера)`:''}. Лиды изменились на ${fmtPct(leadsD)}, расход — на ${fmtPct(spendD)}.</p>
+    <h3>Лучший / худший канал</h3>
+    <p>${best ? `Лучший — <strong>${escapeHtml(best.channel)}</strong>, CPL ${fmtMoney(best.cpl)}.` : 'Вчера не было каналов с лидами для сравнения.'}
+    ${worst && worst.channel!==best?.channel ? ` Худший — <strong>${escapeHtml(worst.channel)}</strong>, CPL ${fmtMoney(worst.cpl)}.` : ''}</p>
+    ${LIVE.no_leads_spend_channels && LIVE.no_leads_spend_channels.length ? `<h3>Тратят бюджет без лидов</h3>${channelListHTML(LIVE.no_leads_spend_channels)}` : ''}
+    <h3>Полный разбор Claude</h3>
+    ${renderAnalysisHTML(LIVE.analysis)}
   `;
 }
 function reportWeekly(){
-  const ld = pctChange(lastWeek.leads, thisWeek.leads);
-  const sd = pctChange(lastWeek.spend, thisWeek.spend);
-  const cd = pctChange(cpl(lastWeek), cpl(thisWeek));
-  const worstCamp = [...DATA.campaigns].sort((a,b)=>pctChange(cpl(b.lastWeek),cpl(b.thisWeek))-pctChange(cpl(a.lastWeek),cpl(a.thisWeek)))[0];
-  const bestCamp = [...DATA.campaigns].sort((a,b)=>pctChange(cpl(a.lastWeek),cpl(a.thisWeek))-pctChange(cpl(b.lastWeek),cpl(b.thisWeek)))[0];
-  return `
-    <h3>Что произошло</h3>
-    <p>За текущую неделю лиды изменились на ${fmtPct(ld)} (${thisWeek.leads} против ${lastWeek.leads}), расход — на ${fmtPct(sd)}, CPL — на ${fmtPct(cd)}.</p>
-    <h3>Почему</h3>
-    <p>Основное давление на CPL — кампания <strong>${worstCamp.name}</strong> (${worstCamp.channel}): CPL ${fmtPct(pctChange(cpl(worstCamp.lastWeek),cpl(worstCamp.thisWeek)))} при спаде лидов ${fmtPct(pctChange(worstCamp.lastWeek.leads,worstCamp.thisWeek.leads))}.</p>
-    <h3>Какие кампании усилить</h3>
-    <p><strong>${bestCamp.name}</strong> — CPL ${fmtPct(pctChange(cpl(bestCamp.lastWeek),cpl(bestCamp.thisWeek)))}, стабильный или растущий объём.</p>
-    <h3>Какие кампании отключить или ограничить</h3>
-    <ul>${DATA.campaigns.filter(c=>pctChange(cpl(c.lastWeek),cpl(c.thisWeek))>=SETTINGS.cplAlertPct).map(c=>`<li>${c.name} — CPL ${fmtMoney(cpl(c.thisWeek))} (${fmtPct(pctChange(cpl(c.lastWeek),cpl(c.thisWeek)))})</li>`).join('')}</ul>
+  if(!LIVE_WEEKLY){
+    return `<p>${demoBadge()}</p><p class="muted">Недельный отчёт формируется по средам, когда закрывается предыдущая неделя (среда–вторник). Пока данных нет — ниже иллюстративный пример структуры.</p><h3>Что произошло</h3>
+    <p>За текущую неделю лиды изменились на ${fmtPct(pctChange(lastWeek.leads,thisWeek.leads))}, расход — на ${fmtPct(pctChange(lastWeek.spend,thisWeek.spend))}.</p>
     <h3>Вопросы агентству</h3>
-    <ul>${DATA.agencyQuestions.slice(0,4).map(q=>`<li>${q}</li>`).join('')}</ul>
+    <ul>${DATA.agencyQuestions.slice(0,4).map(q=>`<li>${escapeHtml(q)}</li>`).join('')}</ul>`;
+  }
+  const tw = LIVE_WEEKLY.totals.this_week, pw = LIVE_WEEKLY.totals.prev_week;
+  const p = LIVE_WEEKLY.period;
+  const ld = pctChange(pw.leads, tw.leads), sd = pctChange(pw.cost, tw.cost), cd = pctChange(pw.cpl||0, tw.cpl||0);
+  return `
+    <h3>Неделя ${fmtDate(p.week_start)} — ${fmtDate(p.week_end)} (против ${fmtDate(p.prev_week_start)} — ${fmtDate(p.prev_week_end)})</h3>
+    <p>Лиды: ${tw.leads} (${fmtPct(ld)}, было ${pw.leads}). Расход: ${fmtMoney(tw.cost)} (${fmtPct(sd)}). ${tw.cpl!=null?`CPL: ${fmtMoney(tw.cpl)} (${fmtPct(cd)}).`:''}</p>
+    <h3>Каналы за неделю</h3>
+    ${channelListHTML(LIVE_WEEKLY.channels.this_week)}
+    ${LIVE_WEEKLY.alerts && LIVE_WEEKLY.alerts.length ? `<h3>Отклонения</h3><ul>${LIVE_WEEKLY.alerts.map(a=>`<li>${escapeHtml(a)}</li>`).join('')}</ul>` : ''}
+    <h3>Полный разбор Claude</h3>
+    ${renderAnalysisHTML(LIVE_WEEKLY.analysis)}
   `;
 }
 function reportMonthly(){
+  // Ежемесячный отчёт с реальными данными не входит в эту версию MVP (нет
+  // накопленной месячной истории) — показываем иллюстративный пример и честно
+  // помечаем его как демо, чтобы не выдавать за реальные цифры.
   const m = DATA.monthly.thisMonth, pm = DATA.monthly.lastMonth;
-  const roi = ((m.revenue-m.spend)/m.spend*100);
-  const romi = (((m.revenue*0.35)-m.spend)/m.spend*100);
   const leadsKpi = (m.leads/SETTINGS.monthlyLeadsTarget*100);
   const budgetKpi = (m.spend/SETTINGS.monthlyBudgetTarget*100);
   return `
+    <p>${demoBadge()}</p>
     <h3>${monthLabel(0)} — выполнение KPI</h3>
     <p>Лиды: ${m.leads} из ${SETTINGS.monthlyLeadsTarget} (${leadsKpi.toFixed(0)}% плана). Бюджет использован на ${budgetKpi.toFixed(0)}% (${fmtMoney(m.spend)} из ${fmtMoney(SETTINGS.monthlyBudgetTarget)}).</p>
     <h3>Показатели</h3>
-    <p>CPL: ${fmtMoney(cpl(m))} (${monthLabel(-1)}: ${fmtMoney(cpl(pm))}). Сделок: ${m.deals}. Выручка: ${fmtMoney(m.revenue)}. ROI: ${roi.toFixed(0)}%. ROMI: ${romi.toFixed(0)}%.</p>
-    <h3>Причины динамики</h3>
-    <p>Снижение лидов на ${Math.abs(pctChange(pm.leads,m.leads)).toFixed(1)}% при почти неизменном бюджете — основной вклад внесло направление БМК в Google Ads (см. еженедельный отчёт).</p>
-    <h3>План действий на следующий месяц</h3>
-    <ul><li>Перераспределить часть бюджета из кампаний с CPL выше среднего в стабильные каналы</li><li>Согласовать с агентством ревизию ключевых слов по направлению БМК</li><li>Обновить объявления с акцентом на сроки производства и реализованные объекты</li></ul>
+    <p>CPL: ${fmtMoney(cpl(m))} (${monthLabel(-1)}: ${fmtMoney(cpl(pm))}).</p>
   `;
 }
 const reportBuilders = {daily:reportDaily, weekly:reportWeekly, monthly:reportMonthly};
@@ -791,27 +952,48 @@ document.getElementById('exportTg').addEventListener('click', ()=>{
 
 /* ============ AGENCY ============ */
 function renderAgency(){
-  const rows = [...DATA.campaigns].sort((a,b)=>pctChange(cpl(b.lastWeek),cpl(b.thisWeek))-pctChange(cpl(a.lastWeek),cpl(a.thisWeek)));
-  document.getElementById('agencyCampBody').innerHTML = rows.map(c=>{
-    const ld = pctChange(c.lastWeek.leads, c.thisWeek.leads);
-    const cd = pctChange(cpl(c.lastWeek), cpl(c.thisWeek));
-    const act = campaignAction(ld, cd);
-    return `<tr><td>${c.name}</td><td>${c.channel}</td><td class="num">${fmtMoney(cpl(c.thisWeek))}</td><td class="num">${fmtPct(cd)}</td><td><span class="tag ${act.tone}">${act.label}</span></td></tr>`;
-  }).join('');
+  const eyebrow = document.getElementById('agencyTableEyebrow');
+  let rows, agencyQuestions;
+  if(LIVE && LIVE.channels && LIVE.channels.yesterday){
+    eyebrow.textContent = 'Каналы · вчера (реальные данные Roistat)';
+    const dbByName = {};
+    (LIVE.channels.day_before||[]).forEach(c=>{ dbByName[c.channel]=c; });
+    rows = [...LIVE.channels.yesterday].sort((a,b)=>(b.cost)-(a.cost)).map(c=>{
+      const prev = dbByName[c.channel];
+      const cd = (prev && prev.cpl && c.cpl!=null) ? pctChange(prev.cpl, c.cpl) : 0;
+      const ld = prev ? pctChange(prev.leads, c.leads) : 0;
+      const act = c.leads===0 && c.cost>0 ? {label:'Тратит без лидов — проверить', tone:'red'} : campaignAction(ld, cd);
+      return `<tr><td>${escapeHtml(c.channel)}</td><td class="num">${fmtNum(c.leads)}</td><td class="num">${fmtMoney(c.cost)}</td>
+        <td class="num">${c.cpl!=null?fmtMoney(c.cpl):'—'}</td><td class="num">${prev&&prev.cpl?fmtPct(cd):'—'}</td>
+        <td><span class="tag ${act.tone}">${act.label}</span></td></tr>`;
+    }).join('');
+    agencyQuestions = asList(LIVE_WEEKLY && LIVE_WEEKLY.analysis && LIVE_WEEKLY.analysis.agency_questions).length
+      ? asList(LIVE_WEEKLY.analysis.agency_questions)
+      : asList(LIVE.analysis && LIVE.analysis.agency_questions);
+  } else {
+    eyebrow.innerHTML = 'Каналы' + demoBadge();
+    rows = [...DATA.campaigns].sort((a,b)=>pctChange(cpl(b.lastWeek),cpl(b.thisWeek))-pctChange(cpl(a.lastWeek),cpl(a.thisWeek))).map(c=>{
+      const ld = pctChange(c.lastWeek.leads, c.thisWeek.leads);
+      const cd = pctChange(cpl(c.lastWeek), cpl(c.thisWeek));
+      const act = campaignAction(ld, cd);
+      return `<tr><td>${c.name}</td><td class="num">${fmtNum(c.thisWeek.leads)}</td><td class="num">${fmtMoney(c.thisWeek.spend)}</td><td class="num">${fmtMoney(cpl(c.thisWeek))}</td><td class="num">${fmtPct(cd)}</td><td><span class="tag ${act.tone}">${act.label}</span></td></tr>`;
+    }).join('');
+    agencyQuestions = DATA.agencyQuestions;
+  }
+  document.getElementById('agencyCampBody').innerHTML = rows;
 
-  document.getElementById('agencyChecklist').innerHTML = DATA.agencyQuestions.map((q,i)=>`
-    <li data-idx="${i}"><input type="checkbox" id="aq${i}"><label for="aq${i}">${q}</label></li>
-  `).join('');
-  loadAgencyState().then(state=>{
-    document.querySelectorAll('#agencyChecklist li').forEach(li=>{
-      const idx = li.dataset.idx;
-      const cb = li.querySelector('input');
-      cb.checked = !!state[idx];
+  document.getElementById('agencyChecklist').innerHTML = (agencyQuestions||[]).map((q,i)=>`
+    <li data-idx="${i}"><input type="checkbox" id="aq${i}"><label for="aq${i}">${escapeHtml(q)}</label></li>
+  `).join('') || '<li class="muted">Вопросы появятся после первого еженедельного отчёта.</li>';
+  const state = loadAgencyState();
+  document.querySelectorAll('#agencyChecklist li[data-idx]').forEach(li=>{
+    const idx = li.dataset.idx;
+    const cb = li.querySelector('input');
+    cb.checked = !!state[idx];
+    li.classList.toggle('checked', cb.checked);
+    cb.addEventListener('change', ()=>{
       li.classList.toggle('checked', cb.checked);
-      cb.addEventListener('change', async ()=>{
-        li.classList.toggle('checked', cb.checked);
-        const s = await loadAgencyState(); s[idx] = cb.checked; await saveAgencyState(s);
-      });
+      const s = loadAgencyState(); s[idx] = cb.checked; saveAgencyState(s);
     });
   });
 }
@@ -833,22 +1015,36 @@ function addTyping(){
 function removeTyping(){ const t = document.getElementById('typingIndicator'); if(t) t.remove(); }
 
 function chatReportText(){
-  const cplD = pctChange(cpl(dayBefore), cpl(yesterday));
-  return `Отчёт за вчера:\nЛиды: ${yesterday.leads} (${fmtPct(pctChange(dayBefore.leads,yesterday.leads))} к позавчера)\nРасход: ${fmtMoney(yesterday.spend)}\nCPL: ${fmtMoney(cpl(yesterday))} (${fmtPct(cplD)})\n\nОсновная причина отклонения — кампания «БМК — Поиск» в Google Ads. Рекомендую проверить изменения в кампании за последние 48 часов.`;
+  if(!LIVE) return '(демо) '+`Отчёт за вчера:\nЛиды: ${yesterday.leads} (${fmtPct(pctChange(dayBefore.leads,yesterday.leads))} к позавчера)\nРасход: ${fmtMoney(yesterday.spend)}\nCPL: ${fmtMoney(cpl(yesterday))}`;
+  const y = LIVE.totals.yesterday, db = LIVE.totals.day_before;
+  return `Отчёт за ${fmtDate(LIVE.period.yesterday)}:\nЛиды: ${y.leads} (${fmtPct(pctChange(db.leads,y.leads))} к позавчера)\nРасход: ${fmtMoney(y.cost)}\n${y.cpl!=null?`CPL: ${fmtMoney(y.cpl)}\n`:''}\n${LIVE.analysis.what_happened}`;
 }
 function chatCompareText(){
-  return `Неделя к неделе: лиды ${fmtPct(pctChange(lastWeek.leads,thisWeek.leads))}, расход ${fmtPct(pctChange(lastWeek.spend,thisWeek.spend))}, CPL ${fmtPct(pctChange(cpl(lastWeek),cpl(thisWeek)))}.\nМесяц к месяцу: лиды ${fmtPct(pctChange(DATA.monthly.lastMonth.leads,DATA.monthly.thisMonth.leads))}, CPL ${fmtPct(pctChange(cpl(DATA.monthly.lastMonth),cpl(DATA.monthly.thisMonth)))}.`;
+  if(!LIVE) return '(демо) '+`Неделя к неделе: лиды ${fmtPct(pctChange(lastWeek.leads,thisWeek.leads))}, расход ${fmtPct(pctChange(lastWeek.spend,thisWeek.spend))}.`;
+  const y = LIVE.totals.yesterday, db = LIVE.totals.day_before;
+  let text = `Вчера к позавчера: лиды ${fmtPct(pctChange(db.leads,y.leads))}, расход ${fmtPct(pctChange(db.cost,y.cost))}${y.cpl&&db.cpl?`, CPL ${fmtPct(pctChange(db.cpl,y.cpl))}`:''}.`;
+  if(LIVE_WEEKLY){
+    const tw = LIVE_WEEKLY.totals.this_week, pw = LIVE_WEEKLY.totals.prev_week;
+    text += `\nНеделя к неделе (${fmtDate(LIVE_WEEKLY.period.week_start)} — ${fmtDate(LIVE_WEEKLY.period.week_end)}): лиды ${fmtPct(pctChange(pw.leads,tw.leads))}, расход ${fmtPct(pctChange(pw.cost,tw.cost))}.`;
+  } else {
+    text += '\nНедельное сравнение появится по средам, когда закроется очередная неделя (среда-вторник).';
+  }
+  return text;
 }
 function chatProblemsText(){
-  const problems = DATA.campaigns.filter(c=>pctChange(cpl(c.lastWeek),cpl(c.thisWeek))>=SETTINGS.cplAlertPct);
-  if(problems.length===0) return 'Сейчас нет кампаний, превышающих заданный порог по CPL.';
-  return 'Проблемные кампании:\n'+problems.map(c=>`• ${c.name} (${c.channel}) — CPL ${fmtMoney(cpl(c.thisWeek))}, ${fmtPct(pctChange(cpl(c.lastWeek),cpl(c.thisWeek)))}`).join('\n');
+  if(!LIVE) return '(демо) Сейчас нет кампаний, превышающих заданный порог по CPL.';
+  const problems = (LIVE.no_leads_spend_channels||[]);
+  if(problems.length===0) return 'Сейчас нет каналов, которые тратят бюджет без единого лида.';
+  return 'Тратят бюджет без лидов:\n'+problems.map(c=>`• ${c.channel} — ${fmtMoney(c.cost)}`).join('\n');
 }
 function chatRecommendText(){
-  return `1. Проверить кампанию «БМК — Поиск»: ключевые слова, ставки, посадочную страницу.\n2. Перераспределить бюджет в «Ворота и калитки — акции» (Meta Ads) — CPL снижается.\n3. Запросить у агентства отчёт по изменениям в кампаниях БМК за 7 дней.\n4. Подготовить новые объявления с акцентом на сроки производства и реализованные объекты.`;
+  if(!LIVE) return '(демо) Проверить кампанию с наибольшим ростом CPL и перераспределить бюджет в лучший канал.';
+  return asList(LIVE.analysis.actions).map((a,i)=>`${i+1}. ${a}`).join('\n');
 }
 function chatAgencyText(){
-  return 'Вопросы агентству:\n'+DATA.agencyQuestions.map(q=>'• '+q).join('\n');
+  const fromWeekly = asList(LIVE_WEEKLY && LIVE_WEEKLY.analysis && LIVE_WEEKLY.analysis.agency_questions);
+  const questions = fromWeekly.length ? fromWeekly : (LIVE ? asList(LIVE.analysis.agency_questions) : DATA.agencyQuestions);
+  return 'Вопросы агентству:\n'+questions.map(q=>'• '+q).join('\n');
 }
 const actionMap = {
   report:{label:'Сформировать отчёт', fn:chatReportText},
@@ -877,114 +1073,176 @@ document.getElementById('chatForm').addEventListener('submit', e=>{
 });
 
 /* ============ STORAGE: SETTINGS ============ */
+// config.json — общий файл настроек, который также читает ksm_daily_agent.py
+// на каждом запуске (пороги уведомлений и план по лидам/бюджету). localStorage
+// используется только как мгновенный кэш для интерфейса, источник истины — файл
+// в репозитории.
+const CONFIG_CACHE_KEY = 'ksm_config_cache';
 async function loadSettings(){
+  let cached = null;
+  try{ cached = JSON.parse(localStorage.getItem(CONFIG_CACHE_KEY) || 'null'); }catch(e){}
   try{
-    const res = await window.storage.get('settings:thresholds', true);
-    if(res && res.value) return {...SETTINGS, ...JSON.parse(res.value)};
-  }catch(e){}
-  return SETTINGS;
+    const text = await githubReadTextFile('config.json');
+    if(text){
+      const remote = JSON.parse(text);
+      localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(remote));
+      return {...SETTINGS, ...remote};
+    }
+  }catch(e){ console.warn('config.json из GitHub не загружен:', e.message); }
+  return cached ? {...SETTINGS, ...cached} : SETTINGS;
 }
 async function saveSettingsToStorage(s){
-  try{ await window.storage.set('settings:thresholds', JSON.stringify(s), true); return true; }
-  catch(e){ return false; }
+  localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(s));
+  await githubWriteFile('config.json', JSON.stringify(s, null, 2), 'Настройки: обновлены пороги/план из интерфейса');
 }
 function fillSettingsForm(){
   document.getElementById('setCpl').value = SETTINGS.cplAlertPct;
   document.getElementById('setLeads').value = SETTINGS.leadsDropAlertPct;
   document.getElementById('setLeadsTarget').value = SETTINGS.monthlyLeadsTarget;
   document.getElementById('setBudgetTarget').value = SETTINGS.monthlyBudgetTarget;
+  document.getElementById('setGithubToken').value = getGithubToken();
+}
+function settingsMsg(text, isError){
+  const el = document.getElementById('settingsSaved');
+  el.textContent = text;
+  el.hidden = false;
+  el.style.color = isError ? 'var(--red)' : '';
+  clearTimeout(settingsMsg._t);
+  settingsMsg._t = setTimeout(()=>{ el.hidden = true; el.style.color=''; }, isError ? 6000 : 3000);
 }
 document.getElementById('settingsForm').addEventListener('submit', async e=>{
   e.preventDefault();
+  setGithubToken(document.getElementById('setGithubToken').value.trim());
   SETTINGS = {
     cplAlertPct: Number(document.getElementById('setCpl').value),
     leadsDropAlertPct: Number(document.getElementById('setLeads').value),
     monthlyLeadsTarget: Number(document.getElementById('setLeadsTarget').value),
     monthlyBudgetTarget: Number(document.getElementById('setBudgetTarget').value)
   };
-  await saveSettingsToStorage(SETTINGS);
-  document.getElementById('settingsSaved').hidden = false;
-  setTimeout(()=>document.getElementById('settingsSaved').hidden = true, 3000);
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try{
+    await saveSettingsToStorage(SETTINGS);
+    settingsMsg('Сохранено. Уведомления пересчитаны, скрипт подхватит новые пороги при следующем запуске.', false);
+  }catch(err){
+    settingsMsg('Не удалось сохранить в GitHub: ' + err.message, true);
+  }finally{
+    btn.disabled = false;
+  }
   renderDashboard(); renderNotifications(); renderAgency();
 });
 
-/* ============ STORAGE: AGENCY CHECKLIST ============ */
-async function loadAgencyState(){
-  try{ const res = await window.storage.get('agency:checklist', true); if(res && res.value) return JSON.parse(res.value); }
-  catch(e){}
-  return {};
+/* ============ ЧЕК-ЛИСТ АГЕНТСТВА (localStorage — состояние личное для браузера) ============ */
+function loadAgencyState(){
+  try{ return JSON.parse(localStorage.getItem('ksm_agency_checklist') || '{}'); }
+  catch(e){ return {}; }
 }
-async function saveAgencyState(state){
-  try{ await window.storage.set('agency:checklist', JSON.stringify(state), true); }catch(e){}
+function saveAgencyState(state){
+  localStorage.setItem('ksm_agency_checklist', JSON.stringify(state));
 }
 
-/* ============ STORAGE: KNOWLEDGE BASE ============ */
-const kbSeed = [
-  {id:'seed1', title:'Каталог продукции KSM 2025', category:'Презентация', note:'Актуальный каталог для отдела продаж и рекламы', addedAt:new Date(Date.now()-30*86400000).toISOString()},
-  {id:'seed2', title:'Регламент работы с подрядчиком по контекстной рекламе', category:'Регламент', note:'Сроки ответов, формат отчётности, зоны ответственности', addedAt:new Date(Date.now()-20*86400000).toISOString()},
-  {id:'seed3', title:'KPI отдела маркетинга', category:'Отчёт', note:'Плановые показатели по лидам, CPL и бюджету на текущий год', addedAt:new Date(Date.now()-10*86400000).toISOString()}
-];
+/* ============ БАЗА ЗНАНИЙ (реально пишет в репозиторий: knowledge_base.md
+   читает ksm_daily_agent.py и передаёт Claude при каждом анализе; файлы
+   уходят в папку knowledge/, откуда скрипт вытаскивает текст/картинки;
+   knowledge/index.json — только для быстрого списка на этой странице). */
+function kbMsg(text, isError){
+  const el = document.getElementById('kbSaved');
+  el.textContent = text; el.hidden = false;
+  el.style.color = isError ? 'var(--red)' : '';
+  clearTimeout(kbMsg._t);
+  kbMsg._t = setTimeout(()=>{ el.hidden = true; el.style.color=''; }, isError ? 7000 : 3000);
+}
 async function loadKB(){
   try{
-    const listRes = await window.storage.list('kb:', true);
-    const keys = (listRes && listRes.keys) || [];
-    if(keys.length===0){
-      for(const s of kbSeed){ await window.storage.set('kb:'+s.id, JSON.stringify(s), true); }
-      return kbSeed;
-    }
-    const entries = [];
-    for(const k of keys){
-      try{ const r = await window.storage.get(k, true); if(r && r.value) entries.push(JSON.parse(r.value)); }catch(e){}
-    }
+    const text = await githubReadTextFile('knowledge/index.json');
+    if(!text) return [];
+    const entries = JSON.parse(text);
     entries.sort((a,b)=> (b.addedAt||'').localeCompare(a.addedAt||''));
     return entries;
-  }catch(e){ return kbSeed; }
+  }catch(e){ console.warn('knowledge/index.json не загружен:', e.message); return []; }
 }
 function renderKBList(entries){
   const el = document.getElementById('kbList');
+  if(!getGithubToken()){
+    el.innerHTML = '<div class="empty-state">Чтобы видеть и добавлять записи, вставьте личный токен GitHub во вкладке «Настройки → Дополнительно».</div>';
+    return;
+  }
   if(entries.length===0){ el.innerHTML = '<div class="empty-state">Пока пусто — добавьте первую запись выше.</div>'; return; }
   el.innerHTML = entries.map(e=>`
     <div class="kb-item" data-id="${e.id}">
-      <div class="kb-item-top"><strong>${e.title}</strong><span class="tag neutral">${e.category}</span><button class="link-btn" data-del="${e.id}">Удалить</button></div>
-      ${e.note ? `<div class="kb-item-note">${e.note}</div>` : ''}
+      <div class="kb-item-top"><strong>${escapeHtml(e.title)}</strong><span class="tag neutral">${escapeHtml(e.category)}</span>${e.fileName?`<span class="tag neutral">${escapeHtml(e.fileName)}</span>`:''}<button class="link-btn" data-del="${e.id}">Убрать из списка</button></div>
+      ${e.note ? `<div class="kb-item-note">${escapeHtml(e.note)}</div>` : ''}
       <div class="kb-item-meta">Добавлено ${new Date(e.addedAt).toLocaleDateString('ru-RU')}</div>
     </div>`).join('');
   el.querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      try{ await window.storage.delete('kb:'+btn.dataset.del, true); }catch(e){}
-      const entries = await loadKB(); renderKBList(entries);
+      try{
+        const entries = (await loadKB()).filter(x=>x.id!==btn.dataset.del);
+        await githubWriteFile('knowledge/index.json', JSON.stringify(entries, null, 2), 'База знаний: запись убрана из списка');
+        kbMsg('Убрано из списка. Текст, который агент уже прочитал, остаётся в истории knowledge_base.md.', false);
+        renderKBList(await loadKB());
+      }catch(err){ kbMsg('Не удалось удалить: ' + err.message, true); }
     });
   });
 }
 document.getElementById('kbForm').addEventListener('submit', async e=>{
   e.preventDefault();
+  const file = document.getElementById('kbFile').files[0];
   const entry = {
     id: 'e'+Date.now(),
     title: document.getElementById('kbTitle').value.trim(),
     category: document.getElementById('kbCategory').value,
     note: document.getElementById('kbNote').value.trim(),
+    fileName: file ? file.name : null,
     addedAt: new Date().toISOString()
   };
   if(!entry.title) return;
-  try{ await window.storage.set('kb:'+entry.id, JSON.stringify(entry), true); }catch(err){}
-  document.getElementById('kbForm').reset();
-  const entries = await loadKB(); renderKBList(entries);
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Сохраняю…';
+  try{
+    if(file){
+      const base64 = await fileToBase64(file);
+      await githubWriteFile('knowledge/'+file.name, base64, `База знаний: файл «${file.name}»`, true);
+    }
+    const currentMd = await githubReadTextFile('knowledge_base.md');
+    const section = `\n\n## ${entry.title} (${entry.category})\n_Добавлено ${new Date(entry.addedAt).toLocaleDateString('ru-RU')}_\n\n${entry.note || ''}${entry.fileName ? `\n\nПриложенный файл: \`knowledge/${entry.fileName}\`` : ''}\n`;
+    await githubWriteFile('knowledge_base.md', (currentMd||'') + section, `База знаний: добавлено «${entry.title}»`);
+    const entries = await loadKB(); entries.unshift(entry);
+    await githubWriteFile('knowledge/index.json', JSON.stringify(entries, null, 2), `База знаний: индекс — добавлено «${entry.title}»`);
+    document.getElementById('kbForm').reset();
+    kbMsg('Добавлено в базу знаний. Агент учтёт это при следующем ежедневном анализе.', false);
+    renderKBList(entries);
+  }catch(err){
+    kbMsg('Не удалось сохранить: ' + err.message, true);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Добавить в базу знаний';
+  }
 });
 
 /* ============ INIT ============ */
+// Каждый шаг обёрнут отдельно: если один раздел упадёт из-за неожиданной
+// формы данных (например, ИИ вернёт не тот тип поля), это не должно гасить
+// весь сайт — остальные вкладки обязаны продолжать работать.
+function safeStep(label, fn){
+  try{ fn(); }catch(e){ console.error(`[init] ${label} упал:`, e); }
+}
 async function init(){
   applyTheme(await loadTheme());
-  SETTINGS = await loadSettings();
-  fillSettingsForm();
-  LIVE = await tryLoadLive();
-  applyLiveStatus();
-  renderDashboard();
-  renderReport('daily');
-  renderNotifications();
-  renderAgency();
+  try{ SETTINGS = await loadSettings(); }catch(e){ console.error('[init] loadSettings упал:', e); }
+  safeStep('fillSettingsForm', fillSettingsForm);
+  try{ LIVE = await tryLoadLive(); }catch(e){ console.error('[init] tryLoadLive упал:', e); }
+  try{ LIVE_WEEKLY = await tryLoadLiveWeekly(); }catch(e){ console.error('[init] tryLoadLiveWeekly упал:', e); }
+  try{ LIVE_HISTORY = await tryLoadChannelHistory(); }catch(e){ console.error('[init] tryLoadChannelHistory упал:', e); }
+  safeStep('applyLiveStatus', applyLiveStatus);
+  safeStep('renderDashboard', renderDashboard);
+  safeStep('renderReport', () => renderReport('daily'));
+  safeStep('renderNotifications', renderNotifications);
+  safeStep('renderAgency', renderAgency);
   document.getElementById('kbList').innerHTML = '<div class="empty-state">Загрузка…</div>';
-  const kbEntries = await loadKB();
-  renderKBList(kbEntries);
+  try{
+    const kbEntries = await loadKB();
+    renderKBList(kbEntries);
+  }catch(e){ console.error('[init] loadKB/renderKBList упал:', e); }
   addMsg('agent','Агент KSM','Привет! Нажмите одну из кнопок выше — сформирую отчёт, сравню периоды или покажу проблемные кампании.');
 }
 init();

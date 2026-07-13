@@ -36,7 +36,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add latest_snapshot.json
+          git add latest_snapshot.json data/channel_history.json
+          # latest_weekly_snapshot.json появляется только по средам — git add
+          # на несуществующий файл прервал бы весь шаг, поэтому отдельно и
+          # без падения, если файла ещё нет (например, самый первый запуск).
+          [ -f latest_weekly_snapshot.json ] && git add latest_weekly_snapshot.json || true
           if ! git diff --staged --quiet; then
             git commit -m "Обновление данных: $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
