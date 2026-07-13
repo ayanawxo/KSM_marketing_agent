@@ -30,7 +30,16 @@ ROISTAT_API_KEY = os.environ["ROISTAT_API_KEY"]
 ROISTAT_PROJECT_ID = os.environ["ROISTAT_PROJECT_ID"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+# Несколько получателей — через запятую в одном секрете (например
+# "5313414485,987654321"), каждый должен один раз написать боту лично
+# (иначе Telegram не разрешит боту писать первым — правило платформы).
+# Список из TELEGRAM_CHAT_ID — это "ручной" базовый список; sync_telegram_recipients()
+# ниже дополняет его теми, кто сам написал боту и назвал кодовое слово.
+TELEGRAM_CHAT_IDS = [c.strip() for c in os.environ.get("TELEGRAM_CHAT_ID", "").split(",") if c.strip()]
+# Кодовое слово для самостоятельной подписки в боте — секрет (репозиторий
+# публичный, поэтому слово нельзя хардкодить в коде/config.json, иначе любой
+# читающий репозиторий узнает его и сможет подписаться сам).
+TELEGRAM_JOIN_CODE = os.environ.get("TELEGRAM_JOIN_CODE", "").strip().lower()
 
 # Для ежедневных/еженедельных отчётов достаточно Sonnet.
 CLAUDE_MODEL = "claude-sonnet-5"
@@ -707,18 +716,106 @@ WEEKLY_SYSTEM_PROMPT_TEMPLATE = """Ты — ИИ-агент «Маркетинг
 
 
 # ---------- 4. Telegram ----------
+# Самостоятельная подписка: сотрудник пишет боту, бот сам спрашивает кодовое
+# слово и регистрирует новый chat_id после того, как слово названо — без
+# ручного вмешательства. Так как скрипт запускается не постоянно, а раз в
+# день по расписанию, разговор растягивается на реальных запусках: "здесь
+# спросили код" и "тут его назвали" могут оказаться в разных запусках, но
+# итог тот же — подписка без правки секретов и кода.
+RECIPIENTS_PATH = os.path.join(DATA_DIR, "telegram_recipients.json")
+
+
+def load_recipients():
+    if not os.path.exists(RECIPIENTS_PATH):
+        return {"chat_ids": [], "pending": [], "last_update_id": 0}
+    try:
+        with open(RECIPIENTS_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        data.setdefault("chat_ids", [])
+        data.setdefault("pending", [])
+        data.setdefault("last_update_id", 0)
+        return data
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"[Telegram] Не удалось прочитать {RECIPIENTS_PATH}, начинаю с чистого листа: {e}", file=sys.stderr)
+        return {"chat_ids": [], "pending": [], "last_update_id": 0}
+
+
+def save_recipients(data):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(RECIPIENTS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _send_single_telegram(chat_id, text):
+    if not TELEGRAM_BOT_TOKEN:
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    try:
+        resp = requests.post(url, json={"chat_id": chat_id, "text": text}, timeout=15)
+        if resp.status_code >= 400:
+            print(f"[Telegram] Ошибка отправки на chat_id {chat_id}, статус {resp.status_code}: {resp.text[:300]}", file=sys.stderr)
+    except requests.exceptions.RequestException as e:
+        print(f"[Telegram] Сетевая ошибка при отправке на chat_id {chat_id}: {e}", file=sys.stderr)
+
+
+def sync_telegram_recipients():
+    """Проверяет новые сообщения боту (getUpdates) и ведёт саморегистрацию
+    по кодовому слову TELEGRAM_JOIN_CODE. Возвращает актуальный список
+    chat_id, которые уже подписаны (из data/telegram_recipients.json)."""
+    if not TELEGRAM_BOT_TOKEN:
+        return []
+    data = load_recipients()
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
+    try:
+        resp = requests.get(url, params={"offset": data["last_update_id"] + 1}, timeout=15)
+        resp.raise_for_status()
+        updates = resp.json().get("result", [])
+    except requests.exceptions.RequestException as e:
+        print(f"[Telegram] Не удалось получить обновления для авторегистрации: {e}", file=sys.stderr)
+        return data["chat_ids"]
+
+    latest_text_by_chat = {}
+    for upd in updates:
+        data["last_update_id"] = max(data["last_update_id"], upd.get("update_id", 0))
+        msg = upd.get("message")
+        if not msg or (msg.get("chat") or {}).get("type") != "private":
+            continue
+        chat_id = str(msg["chat"]["id"])
+        latest_text_by_chat[chat_id] = (msg.get("text") or "").strip().lower()
+
+    for chat_id, text in latest_text_by_chat.items():
+        if chat_id in data["chat_ids"]:
+            continue
+        code_matched = bool(TELEGRAM_JOIN_CODE) and TELEGRAM_JOIN_CODE in text
+        if code_matched:
+            data["chat_ids"].append(chat_id)
+            if chat_id in data["pending"]:
+                data["pending"].remove(chat_id)
+            _send_single_telegram(chat_id, "Готово! Вы подписаны на ежедневные и еженедельные отчёты KSM-маркетинга.")
+            print(f"[Telegram] Новый подписчик через кодовое слово: {chat_id}")
+        elif chat_id in data["pending"]:
+            _send_single_telegram(chat_id, "Кодовое слово не распознано. Напишите его ещё раз, чтобы подписаться на отчёты KSM-маркетинга.")
+        else:
+            data["pending"].append(chat_id)
+            _send_single_telegram(chat_id, "Здравствуйте! Чтобы подписаться на отчёты KSM-маркетинга, напишите кодовое слово.")
+
+    save_recipients(data)
+    return data["chat_ids"]
+
+
 def send_telegram_alert(text):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_IDS:
         print("Telegram не настроен (нет токена/chat_id) — пропускаю отправку.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    resp = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text}, timeout=15)
-    if resp.status_code >= 400:
-        # Раньше ответ Telegram вообще не проверялся — ошибка отправки (например,
-        # неверный формат токена) проходила незамеченной.
-        print(f"[Telegram] Ошибка отправки, статус {resp.status_code}: {resp.text[:300]}")
-    else:
-        print("[Telegram] Сообщение отправлено.")
+    # Рассылка каждому получателю по отдельности — если один chat_id окажется
+    # неверным/отозванным, это не должно останавливать доставку остальным.
+    for chat_id in TELEGRAM_CHAT_IDS:
+        resp = requests.post(url, json={"chat_id": chat_id, "text": text}, timeout=15)
+        if resp.status_code >= 400:
+            print(f"[Telegram] Ошибка отправки на chat_id {chat_id}, статус {resp.status_code}: {resp.text[:300]}")
+        else:
+            print(f"[Telegram] Сообщение отправлено (chat_id {chat_id}).")
 
 
 def send_daily_telegram(snapshot):
@@ -929,9 +1026,16 @@ def run_weekly_report(today, knowledge_text, knowledge_blocks, history):
 
 # ---------- main: одна ежедневная итерация ----------
 def main():
+    global TELEGRAM_CHAT_IDS
     today = almaty_today()
     yesterday_date = today - timedelta(days=1)
     day_before_date = today - timedelta(days=2)
+
+    # Сначала синхронизация подписчиков (кодовое слово в боте), чтобы те, кто
+    # уже подписался, сразу получили и сегодняшний отчёт, а не только со
+    # следующего запуска.
+    dynamic_recipients = sync_telegram_recipients()
+    TELEGRAM_CHAT_IDS = sorted(set(TELEGRAM_CHAT_IDS) | set(dynamic_recipients))
 
     knowledge_text, knowledge_blocks = load_knowledge()
 
