@@ -1,6 +1,12 @@
 {
   "cplAlertPct": 15,
   "leadsDropAlertPct": 15,
+  "visitsDropAlertPct": 25,
+  "ctrDropAlertPct": 25,
+  "cpcRiseAlertPct": 25,
+  "conversionDropAlertPct": 25,
+  "noLeadsSpendAlertTenge": 3000,
   "monthlyLeadsTarget": 400,
-  "monthlyBudgetTarget": 8000000
+  "monthlyBudgetTarget": 8000000,
+  "channelAliases": {}
 }
